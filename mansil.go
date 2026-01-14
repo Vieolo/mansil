@@ -53,24 +53,31 @@ const ClearLine = "\033[2K"
 func CursorUp(n int) string {
 	return fmt.Sprintf("\033[%dA", n)
 }
+const CursorUp1 = "\033[1A"
 func CursorDown(n int) string {
 	return fmt.Sprintf("\033[%dB", n)
 }
+const CursorDown1 = "\033[1B"
 func CursorRight(n int) string {
 	return fmt.Sprintf("\033[%dC", n)
 }
+const CursorRight1 = "\033[1C"
 func CursorLeft(n int) string {
 	return fmt.Sprintf("\033[%dD", n)
 }
+const CursorLeft1 = "\033[1D"
 func CursorNextLine(n int) string {
 	return fmt.Sprintf("\033[%dE", n)
 }
+const CursorNextLine1 = "\033[1E"
 func CursorPrevLine(n int) string {
 	return fmt.Sprintf("\033[%dF", n)
 }
+const CursorPrevLine1 = "\033[1F"
 func CursorColumn(n int) string {
 	return fmt.Sprintf("\033[%dG", n)
 }
+const CursorColumn1 = "\033[1G"
 func CursorPosition(row, col int) string {
 	return fmt.Sprintf("\033[%d;%dH", row, col)
 }

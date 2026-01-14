@@ -119,10 +119,18 @@ func generateGo(s *Source, path string) error {
 			fmt.Fprintf(f, "const %s = \"%s\"\n", c.Name, c.Seq)
 		} else {
 			count := strings.Count(c.Fmt, "%d")
+
+			// Multi-unit (Function)
 			args, vars := getArgs(count)
 			argDef := strings.Join(args, ", ") + " int"
 			varList := strings.Join(vars, ", ")
 			fmt.Fprintf(f, "func %s(%s) string {\n\treturn fmt.Sprintf(\"%s\", %s)\n}\n", c.Name, argDef, c.Fmt, varList)
+
+			// Single-unit (Constant) if exactly one param
+			if count == 1 {
+				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
+				fmt.Fprintf(f, "const %s1 = \"%s\"\n", c.Name, singleFmt)
+			}
 		}
 	}
 	return nil
@@ -167,6 +175,11 @@ func generatePython(s *Source, path string) error {
 
 			funcName := strings.ToLower(name)
 			fmt.Fprintf(f, "def %s(%s) -> str:\n    return f\"%s\"\n", funcName, argDef, pyFmt)
+
+			if count == 1 {
+				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
+				fmt.Fprintf(f, "%s_1 = \"%s\"\n", name, singleFmt)
+			}
 		}
 	}
 
@@ -214,6 +227,12 @@ func generateRust(s *Source, path string) error {
 			rustFmt = strings.ReplaceAll(rustFmt, "\\033", "\\x1b")
 			funcName := strings.ToLower(name)
 			fmt.Fprintf(f, "pub fn %s(%s) -> String {\n    format!(\"%s\", %s)\n}\n", funcName, rustArgs, rustFmt, strings.Join(vars, ", "))
+
+			if count == 1 {
+				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
+				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\x1b")
+				fmt.Fprintf(f, "pub const %s_1: &str = \"%s\";\n", name, singleFmt)
+			}
 		}
 	}
 	return nil
@@ -255,6 +274,12 @@ func generateNPM(s *Source, path string) error {
 			}
 
 			fmt.Fprintf(f, "export function %s(%s): string {\n    return `%s`;\n}\n", name, argDef, jsFmt)
+
+			if count == 1 {
+				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
+				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\u001b")
+				fmt.Fprintf(f, "export const %s1 = \"%s\";\n", name, singleFmt)
+			}
 		}
 	}
 	return nil
@@ -267,24 +292,26 @@ func generateDart(s *Source, path string) error {
 	}
 	defer f.Close()
 
+	fmt.Fprintf(f, "class Mansil {\n")
+
 	fmt.Fprintf(f, "// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "const String %s = \"\\u001b[%sm\";\n", toLowerCamel(st.Name), st.Code)
+		fmt.Fprintf(f, "static const String %s = \"\\u001b[%sm\";\n", toLowerCamel(st.Name), st.Code)
 	}
 
 	fmt.Fprintf(f, "\n// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "const String %sFg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Fg)
-		fmt.Fprintf(f, "const String %sBg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Bg)
-		fmt.Fprintf(f, "const String %sFgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.FgBright)
-		fmt.Fprintf(f, "const String %sBgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.BgBright)
+		fmt.Fprintf(f, "static const String %sFg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Fg)
+		fmt.Fprintf(f, "static const String %sBg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Bg)
+		fmt.Fprintf(f, "static const String %sFgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.FgBright)
+		fmt.Fprintf(f, "static const String %sBgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.BgBright)
 	}
 
 	fmt.Fprintf(f, "\n// Controls\n")
 	for _, c := range s.Controls {
 		name := toLowerCamel(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "const String %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
+			fmt.Fprintf(f, "static const String %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
 			args, _ := getArgs(count)
@@ -295,9 +322,15 @@ func generateDart(s *Source, path string) error {
 			for _, a := range args {
 				dartStr = strings.Replace(dartStr, "%d", "${"+a+"}", 1)
 			}
+			fmt.Fprintf(f, "static String %s(%s) => \"%s\";\n", name, argDef, dartStr)
 
-			fmt.Fprintf(f, "String %s(%s) => \"%s\";\n", name, argDef, dartStr)
+			if count == 1 {
+				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
+				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\u001b")
+				fmt.Fprintf(f, "static const String %s1 = \"%s\";\n", name, singleFmt)
+			}
 		}
 	}
+	fmt.Fprintf(f, "}\n") // Close class
 	return nil
 }

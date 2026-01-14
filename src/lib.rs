@@ -51,24 +51,31 @@ pub const CLEAR_LINE: &str = "\x1b[2K";
 pub fn cursor_up(n: u32) -> String {
     format!("\x1b[{}A", n)
 }
+pub const CURSOR_UP_1: &str = "\x1b[1A";
 pub fn cursor_down(n: u32) -> String {
     format!("\x1b[{}B", n)
 }
+pub const CURSOR_DOWN_1: &str = "\x1b[1B";
 pub fn cursor_right(n: u32) -> String {
     format!("\x1b[{}C", n)
 }
+pub const CURSOR_RIGHT_1: &str = "\x1b[1C";
 pub fn cursor_left(n: u32) -> String {
     format!("\x1b[{}D", n)
 }
+pub const CURSOR_LEFT_1: &str = "\x1b[1D";
 pub fn cursor_next_line(n: u32) -> String {
     format!("\x1b[{}E", n)
 }
+pub const CURSOR_NEXT_LINE_1: &str = "\x1b[1E";
 pub fn cursor_prev_line(n: u32) -> String {
     format!("\x1b[{}F", n)
 }
+pub const CURSOR_PREV_LINE_1: &str = "\x1b[1F";
 pub fn cursor_column(n: u32) -> String {
     format!("\x1b[{}G", n)
 }
+pub const CURSOR_COLUMN_1: &str = "\x1b[1G";
 pub fn cursor_position(row: u32, col: u32) -> String {
     format!("\x1b[{};{}H", row, col)
 }

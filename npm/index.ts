@@ -49,24 +49,31 @@ export const clearLine = "\u001b[2K";
 export function cursorUp(n: number): string {
     return `\u001b[${n}A`;
 }
+export const cursorUp1 = "\u001b[1A";
 export function cursorDown(n: number): string {
     return `\u001b[${n}B`;
 }
+export const cursorDown1 = "\u001b[1B";
 export function cursorRight(n: number): string {
     return `\u001b[${n}C`;
 }
+export const cursorRight1 = "\u001b[1C";
 export function cursorLeft(n: number): string {
     return `\u001b[${n}D`;
 }
+export const cursorLeft1 = "\u001b[1D";
 export function cursorNextLine(n: number): string {
     return `\u001b[${n}E`;
 }
+export const cursorNextLine1 = "\u001b[1E";
 export function cursorPrevLine(n: number): string {
     return `\u001b[${n}F`;
 }
+export const cursorPrevLine1 = "\u001b[1F";
 export function cursorColumn(n: number): string {
     return `\u001b[${n}G`;
 }
+export const cursorColumn1 = "\u001b[1G";
 export function cursorPosition(row: number, col: number): string {
     return `\u001b[${row};${col}H`;
 }
