@@ -245,24 +245,26 @@ func generateNPM(s *Source, path string) error {
 	}
 	defer f.Close()
 
+	fmt.Fprintf(f, "export default class Mansil {\n")
+
 	fmt.Fprintf(f, "// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "export const %s = \"\\u001b[%sm\";\n", st.Name, st.Code)
+		fmt.Fprintf(f, "    static readonly %s = \"\\u001b[%sm\";\n", st.Name, st.Code)
 	}
 
 	fmt.Fprintf(f, "\n// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "export const %sFg = \"\\u001b[%sm\";\n", c.Name, c.Fg)
-		fmt.Fprintf(f, "export const %sBg = \"\\u001b[%sm\";\n", c.Name, c.Bg)
-		fmt.Fprintf(f, "export const %sFgBright = \"\\u001b[%sm\";\n", c.Name, c.FgBright)
-		fmt.Fprintf(f, "export const %sBgBright = \"\\u001b[%sm\";\n", c.Name, c.BgBright)
+		fmt.Fprintf(f, "    static readonly %sFg = \"\\u001b[%sm\";\n", c.Name, c.Fg)
+		fmt.Fprintf(f, "    static readonly %sBg = \"\\u001b[%sm\";\n", c.Name, c.Bg)
+		fmt.Fprintf(f, "    static readonly %sFgBright = \"\\u001b[%sm\";\n", c.Name, c.FgBright)
+		fmt.Fprintf(f, "    static readonly %sBgBright = \"\\u001b[%sm\";\n", c.Name, c.BgBright)
 	}
 
 	fmt.Fprintf(f, "\n// Controls\n")
 	for _, c := range s.Controls {
 		name := toLowerCamel(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "export const %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
+			fmt.Fprintf(f, "    static readonly %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
 			args, _ := getArgs(count)
@@ -273,15 +275,16 @@ func generateNPM(s *Source, path string) error {
 				jsFmt = strings.Replace(jsFmt, "%d", "${"+a+"}", 1)
 			}
 
-			fmt.Fprintf(f, "export function %s(%s): string {\n    return `%s`;\n}\n", name, argDef, jsFmt)
+			fmt.Fprintf(f, "    static %s(%s): string {\n        return `%s`;\n    }\n", name, argDef, jsFmt)
 
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
 				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\u001b")
-				fmt.Fprintf(f, "export const %s1 = \"%s\";\n", name, singleFmt)
+				fmt.Fprintf(f, "    static readonly %s1 = \"%s\";\n", name, singleFmt)
 			}
 		}
 	}
+	fmt.Fprintf(f, "}\n") // Close class
 	return nil
 }
 
