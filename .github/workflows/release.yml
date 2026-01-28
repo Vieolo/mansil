@@ -53,11 +53,16 @@ jobs:
   cargo-release:
     name: Release Cargo Crate
     runs-on: ubuntu-latest
+    environment: crates.io  # Optional: for enhanced security
+    permissions:
+      id-token: write     # Required for OIDC token exchange
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Publish to Crates.io
-        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    - uses: actions/checkout@v6
+    - uses: rust-lang/crates-io-auth-action@v1
+      id: auth
+    - run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   dart-release:
     name: Release Dart Package
