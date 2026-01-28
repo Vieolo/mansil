@@ -1,0 +1,9 @@
+.github
+cmd
+internal
+lib
+*.py
+*.dart
+*.yaml
+*.yml
+*.rs
