@@ -61,15 +61,8 @@ jobs:
 
   dart-release:
     name: Release Dart Package
-    runs-on: ubuntu-latest
     permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - name: Setup Pub Credentials
-        run: |
-          mkdir -p ~/.pub-cache
-          echo '${{ secrets.DART_PUB_CREDENTIALS_JSON }}' > ~/.pub-cache/credentials.json
-      - name: Publish to pub.dev
-        run: dart pub publish --force
+      id-token: write # Required for authentication using OIDC
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      environment: 'pub.dev'
