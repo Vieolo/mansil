@@ -1,0 +1,12 @@
+[project]
+name = "mansil"
+version = "0.1.0"
+description = "Multi-language ANSI codes library"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Vieolo B.V." }
+]
+keywords = ["ansi", "escape-codes", "terminal", "colors"]
+dependencies = []

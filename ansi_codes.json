@@ -1,0 +1,35 @@
+{
+  "styles": [
+    { "name": "Reset", "code": "0" },
+    { "name": "Bold", "code": "1" },
+    { "name": "Dim", "code": "2" },
+    { "name": "Italic", "code": "3" },
+    { "name": "Underline", "code": "4" },
+    { "name": "Blink", "code": "5" },
+    { "name": "Inverse", "code": "7" },
+    { "name": "Hidden", "code": "8" },
+    { "name": "Strikethrough", "code": "9" }
+  ],
+  "colors": [
+    { "name": "Black", "fg": "30", "bg": "40", "fgBright": "90", "bgBright": "100" },
+    { "name": "Red", "fg": "31", "bg": "41", "fgBright": "91", "bgBright": "101" },
+    { "name": "Green", "fg": "32", "bg": "42", "fgBright": "92", "bgBright": "102" },
+    { "name": "Yellow", "fg": "33", "bg": "43", "fgBright": "93", "bgBright": "103" },
+    { "name": "Blue", "fg": "34", "bg": "44", "fgBright": "94", "bgBright": "104" },
+    { "name": "Magenta", "fg": "35", "bg": "45", "fgBright": "95", "bgBright": "105" },
+    { "name": "Cyan", "fg": "36", "bg": "46", "fgBright": "96", "bgBright": "106" },
+    { "name": "White", "fg": "37", "bg": "47", "fgBright": "97", "bgBright": "107" }
+  ],
+  "controls": [
+    { "name": "ClearScreen", "seq": "\\033[2J" },
+    { "name": "ClearLine", "seq": "\\033[2K" },
+    { "name": "CursorUp", "fmt": "\\033[%dA" },
+    { "name": "CursorDown", "fmt": "\\033[%dB" },
+    { "name": "CursorRight", "fmt": "\\033[%dC" },
+    { "name": "CursorLeft", "fmt": "\\033[%dD" },
+    { "name": "CursorNextLine", "fmt": "\\033[%dE" },
+    { "name": "CursorPrevLine", "fmt": "\\033[%dF" },
+    { "name": "CursorColumn", "fmt": "\\033[%dG" },
+    { "name": "CursorPosition", "fmt": "\\033[%d;%dH" }
+  ]
+}

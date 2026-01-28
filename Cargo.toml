@@ -1,0 +1,12 @@
+[package]
+name = "mansil"
+version = "0.1.0"
+edition = "2021"
+description = "Multi-language ANSI codes library"
+license = "MIT"
+repository = "https://github.com/vieolo/mansil"
+authors = ["Vieolo B.V."]
+keywords = ["ansi", "escape-codes", "terminal", "colors"]
+categories = ["command-line-interface"]
+
+[dependencies]

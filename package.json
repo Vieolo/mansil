@@ -1,0 +1,35 @@
+{
+  "name": "@vieolo/mansil",
+  "version": "0.1.0",
+  "description": "Multi-language library of ANSI escape codes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vieolo/mansil.git"
+  },
+  "keywords": [
+    "ansi",
+    "escape-codes",
+    "terminal",
+    "colors"
+  ],
+  "author": "Vieolo B.V.",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Vieolo/mansil/issues"
+  },
+  "homepage": "https://github.com/Vieolo/mansil#readme",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
