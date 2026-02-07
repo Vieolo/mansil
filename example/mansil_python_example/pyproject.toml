@@ -11,4 +11,4 @@ dependencies = [
 mansil = { path = "../.." }
 
 [project.scripts]
-start = "mansil_python_example:main"
+start = "example_main.py"
