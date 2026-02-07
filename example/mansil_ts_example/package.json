@@ -1,0 +1,16 @@
+{
+    "name": "mansil_ts_example",
+    "version": "0.0.1",
+    "description": "Mansil TypeScript example implementation",
+    "type": "module",
+    "main": "src/index.ts",
+    "scripts": {
+        "start": "bun run src/index.ts"
+    },
+    "dependencies": {
+        "@vieolo/mansil": "file:../.."
+    },
+    "devDependencies": {
+        "tsx": "^4.0.0"
+    }
+}
