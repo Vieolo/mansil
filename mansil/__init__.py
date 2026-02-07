@@ -1,4 +1,4 @@
-"""Mansil ANSI Codes"""
+# GEN START
 
 # Styles
 RESET = "\033[0m"
@@ -48,26 +48,36 @@ WHITE_BG_BRIGHT = "\033[107m"
 # Controls
 CLEAR_SCREEN = "\033[2J"
 CLEAR_LINE = "\033[2K"
-def cursor_up(n: int) -> str:
-    return f"\033[{n}A"
 CURSOR_UP_1 = "\033[1A"
-def cursor_down(n: int) -> str:
-    return f"\033[{n}B"
 CURSOR_DOWN_1 = "\033[1B"
-def cursor_right(n: int) -> str:
-    return f"\033[{n}C"
 CURSOR_RIGHT_1 = "\033[1C"
-def cursor_left(n: int) -> str:
-    return f"\033[{n}D"
 CURSOR_LEFT_1 = "\033[1D"
-def cursor_next_line(n: int) -> str:
-    return f"\033[{n}E"
 CURSOR_NEXT_LINE_1 = "\033[1E"
-def cursor_prev_line(n: int) -> str:
-    return f"\033[{n}F"
 CURSOR_PREV_LINE_1 = "\033[1F"
-def cursor_column(n: int) -> str:
-    return f"\033[{n}G"
 CURSOR_COLUMN_1 = "\033[1G"
+
+# GEN END
+
+def cursor_up(n: int) -> str:
+    return CURSOR_UP_1.replace("[1", f"[{n}")
+
+def cursor_down(n: int) -> str:
+    return CURSOR_DOWN_1.replace("[1", f"[{n}")
+
+def cursor_right(n: int) -> str:
+    return CURSOR_RIGHT_1.replace("[1", f"[{n}")
+
+def cursor_left(n: int) -> str:
+    return CURSOR_LEFT_1.replace("[1", f"[{n}")
+
+def cursor_next_line(n: int) -> str:
+    return CURSOR_NEXT_LINE_1.replace("[1", f"[{n}")
+
+def cursor_prev_line(n: int) -> str:
+    return CURSOR_PREV_LINE_1.replace("[1", f"[{n}")
+
+def cursor_column(n: int) -> str:
+    return CURSOR_COLUMN_1.replace("[1", f"[{n}")
+
 def cursor_position(row: int, col: int) -> str:
     return f"\033[{row};{col}H"
