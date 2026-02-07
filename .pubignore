@@ -1,0 +1,2 @@
+# Exclude example folder from published package
+example/

@@ -8,5 +8,6 @@ repository = "https://github.com/vieolo/mansil"
 authors = ["Vieolo B.V."]
 keywords = ["ansi", "escape-codes", "terminal", "colors"]
 categories = ["command-line-interface"]
+exclude = ["example"]
 
 [dependencies]

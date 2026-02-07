@@ -10,3 +10,9 @@ authors = [
 ]
 keywords = ["ansi", "escape-codes", "terminal", "colors"]
 dependencies = []
+
+[tool.hatch.build.targets.sdist]
+exclude = ["example"]
+
+[tool.hatch.build.targets.wheel]
+exclude = ["example"]
