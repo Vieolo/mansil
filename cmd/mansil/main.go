@@ -18,9 +18,8 @@ func main() {
 		Use:   "generate",
 		Short: "Generate ANSI codes for all languages",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cwd, _ := os.Getwd()
-			fmt.Println("Generating ANSI codes from", cwd)
-			return generator.Generate(cwd)
+			fmt.Println("Generating the ANSI codes...")
+			return generator.Generate()
 		},
 	}
 

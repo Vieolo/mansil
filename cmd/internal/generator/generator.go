@@ -9,41 +9,42 @@ import (
 	"unicode"
 )
 
-func ReadSource(path string) (*Source, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var s Source
-	if err := json.Unmarshal(b, &s); err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func Generate(root string) error {
-	srcPath := filepath.Join(root, "ansi_codes.json")
-	src, err := ReadSource(srcPath)
+// Main generator function to generate the constants for all languages
+func Generate() error {
+	src, err := ReadSource("ansi_codes.json")
 	if err != nil {
 		return fmt.Errorf("failed to read source: %w", err)
 	}
 
-	if err := generateGo(src, filepath.Join(root, "mansil.go")); err != nil {
+	if err := generateGo(src, filepath.Join("mansil.go")); err != nil {
 		return err
 	}
-	if err := generatePython(src, filepath.Join(root, "mansil", "__init__.py")); err != nil {
+	if err := generatePython(src, filepath.Join("mansil", "__init__.py")); err != nil {
 		return err
 	}
-	if err := generateRust(src, filepath.Join(root, "src", "lib.rs")); err != nil {
+	if err := generateRust(src, filepath.Join("src", "lib.rs")); err != nil {
 		return err
 	}
-	if err := generateNPM(src, filepath.Join(root, "npm", "index.ts")); err != nil {
+	if err := generateTS(src, filepath.Join("npm", "index.ts")); err != nil {
 		return err
 	}
-	if err := generateDart(src, filepath.Join(root, "lib", "mansil.dart")); err != nil {
+	if err := generateDart(src, filepath.Join("lib", "mansil.dart")); err != nil {
 		return err
 	}
 	return nil
+}
+
+// Reads `ansi.json` as the source of the ANSI codes
+func ReadSource(path string) (Source, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return Source{}, err
+	}
+	var s Source
+	if err := json.Unmarshal(b, &s); err != nil {
+		return Source{}, err
+	}
+	return s, nil
 }
 
 // Helpers
@@ -72,8 +73,11 @@ func toUpperSnake(s string) string {
 	return strings.ToUpper(toSnake(s))
 }
 
-// replaceGenSection reads the file at path, finds the GEN START and GEN END markers,
-// replaces the content between them with newContent, and writes the result back.
+// All constants, in all languages, will be placed in between the "GEN START" and "GEN END" comments
+// and the rest of the files will remain untouched. This allows us to manually modify each file
+// as needed without being overwritten by the generator
+//
+// This function will take the new content and insert it in the boundary of the "GEN *" comments
 func replaceGenSection(path string, newContent string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -82,7 +86,9 @@ func replaceGenSection(path string, newContent string) error {
 
 	content := string(data)
 
-	// Find markers - they might have different comment styles and indentation
+	// Find GEN markers
+	// Since the comments in each language might be differnt (looking at you Python!),
+	// we will look at the comment value directly
 	startIdx := strings.Index(content, "GEN START")
 	endIdx := strings.Index(content, "GEN END")
 
@@ -117,7 +123,9 @@ func replaceGenSection(path string, newContent string) error {
 
 // Generators
 
-func generateGo(s *Source, path string) error {
+// Generates the exported Go code.
+func generateGo(s Source, path string) error {
+	fmt.Println("Generating for Go...")
 	var sb strings.Builder
 
 	sb.WriteString("\n// Styles\n")
@@ -151,7 +159,9 @@ func generateGo(s *Source, path string) error {
 	return replaceGenSection(path, sb.String())
 }
 
-func generatePython(s *Source, path string) error {
+// Generates the exported python code
+func generatePython(s Source, path string) error {
+	fmt.Println("Generating for Python...")
 	var sb strings.Builder
 
 	sb.WriteString("\n# Styles\n")
@@ -185,7 +195,9 @@ func generatePython(s *Source, path string) error {
 	return replaceGenSection(path, sb.String())
 }
 
-func generateRust(s *Source, path string) error {
+// Generates the exported Rust code
+func generateRust(s Source, path string) error {
+	fmt.Println("Generating for Rust...")
 	var sb strings.Builder
 
 	sb.WriteString("\n// Styles\n")
@@ -221,7 +233,9 @@ func generateRust(s *Source, path string) error {
 	return replaceGenSection(path, sb.String())
 }
 
-func generateNPM(s *Source, path string) error {
+// Generates the exported TS code
+func generateTS(s Source, path string) error {
+	fmt.Println("Generating for TS...")
 	var sb strings.Builder
 	indent := "    " // 4 spaces
 
@@ -258,7 +272,9 @@ func generateNPM(s *Source, path string) error {
 	return replaceGenSection(path, sb.String())
 }
 
-func generateDart(s *Source, path string) error {
+// Generates the exported Dart code
+func generateDart(s Source, path string) error {
+	fmt.Println("Generating for Dart...")
 	var sb strings.Builder
 	indent := "  " // 2 spaces
 
