@@ -1,6 +1,12 @@
 package mansil
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+// GEN START
 
 // Styles
 const Reset = "\033[0m"
@@ -50,34 +56,44 @@ const WhiteBGBright = "\033[107m"
 // Controls
 const ClearScreen = "\033[2J"
 const ClearLine = "\033[2K"
-func CursorUp(n int) string {
-	return fmt.Sprintf("\033[%dA", n)
-}
 const CursorUp1 = "\033[1A"
-func CursorDown(n int) string {
-	return fmt.Sprintf("\033[%dB", n)
-}
 const CursorDown1 = "\033[1B"
-func CursorRight(n int) string {
-	return fmt.Sprintf("\033[%dC", n)
-}
 const CursorRight1 = "\033[1C"
-func CursorLeft(n int) string {
-	return fmt.Sprintf("\033[%dD", n)
-}
 const CursorLeft1 = "\033[1D"
-func CursorNextLine(n int) string {
-	return fmt.Sprintf("\033[%dE", n)
-}
 const CursorNextLine1 = "\033[1E"
-func CursorPrevLine(n int) string {
-	return fmt.Sprintf("\033[%dF", n)
-}
 const CursorPrevLine1 = "\033[1F"
-func CursorColumn(n int) string {
-	return fmt.Sprintf("\033[%dG", n)
-}
 const CursorColumn1 = "\033[1G"
+
+// GEN END
+
+func CursorUp(n int) string {
+	return strings.Replace(CursorUp1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorDown(n int) string {
+	return strings.Replace(CursorDown1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorRight(n int) string {
+	return strings.Replace(CursorRight1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorLeft(n int) string {
+	return strings.Replace(CursorLeft1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorNextLine(n int) string {
+	return strings.Replace(CursorNextLine1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorPrevLine(n int) string {
+	return strings.Replace(CursorPrevLine1, "[1", "["+strconv.Itoa(n), 1)
+}
+
+func CursorColumn(n int) string {
+	return strings.Replace(CursorColumn1, "[1", "["+strconv.Itoa(n), 1)
+}
+
 func CursorPosition(row, col int) string {
 	return fmt.Sprintf("\033[%d;%dH", row, col)
 }
