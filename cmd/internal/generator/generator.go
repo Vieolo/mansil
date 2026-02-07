@@ -72,268 +72,225 @@ func toUpperSnake(s string) string {
 	return strings.ToUpper(toSnake(s))
 }
 
-func getArgs(count int) ([]string, []string) {
-	if count == 1 {
-		return []string{"n"}, []string{"n"}
+// replaceGenSection reads the file at path, finds the GEN START and GEN END markers,
+// replaces the content between them with newContent, and writes the result back.
+func replaceGenSection(path string, newContent string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", path, err)
 	}
-	var args []string
-	var vars []string
-	if count == 2 {
-		return []string{"row", "col"}, []string{"row", "col"}
+
+	content := string(data)
+
+	// Find markers - they might have different comment styles and indentation
+	startIdx := strings.Index(content, "GEN START")
+	endIdx := strings.Index(content, "GEN END")
+
+	if startIdx == -1 {
+		return fmt.Errorf("GEN START marker not found in %s", path)
 	}
-	for i := 1; i <= count; i++ {
-		v := fmt.Sprintf("n%d", i)
-		args = append(args, v)
-		vars = append(vars, v)
+	if endIdx == -1 {
+		return fmt.Errorf("GEN END marker not found in %s", path)
 	}
-	return args, vars
+
+	// Find the end of the line containing GEN START
+	startLineEnd := strings.Index(content[startIdx:], "\n")
+	if startLineEnd == -1 {
+		return fmt.Errorf("no newline after GEN START in %s", path)
+	}
+	startLineEnd += startIdx
+
+	// Find the start of the line containing GEN END (go back to find the line start)
+	endLineStart := endIdx
+	for endLineStart > 0 && content[endLineStart-1] != '\n' {
+		endLineStart--
+	}
+
+	// Build the new file content
+	var result strings.Builder
+	result.WriteString(content[:startLineEnd+1]) // Everything up to and including GEN START line
+	result.WriteString(newContent)               // New generated content
+	result.WriteString(content[endLineStart:])   // GEN END line and everything after
+
+	return os.WriteFile(path, []byte(result.String()), 0644)
 }
 
 // Generators
 
 func generateGo(s *Source, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var sb strings.Builder
 
-	fmt.Fprintf(f, "package mansil\n\nimport \"fmt\"\n\n")
-
-	fmt.Fprintf(f, "// Styles\n")
+	sb.WriteString("\n// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "const %s = \"\\033[%sm\"\n", st.Name, st.Code)
+		sb.WriteString(fmt.Sprintf("const %s = \"\\033[%sm\"\n", st.Name, st.Code))
 	}
 
-	fmt.Fprintf(f, "\n// Colors\n")
+	sb.WriteString("\n// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "const %sFG = \"\\033[%sm\"\n", c.Name, c.Fg)
-		fmt.Fprintf(f, "const %sBG = \"\\033[%sm\"\n", c.Name, c.Bg)
-		fmt.Fprintf(f, "const %sFGBright = \"\\033[%sm\"\n", c.Name, c.FgBright)
-		fmt.Fprintf(f, "const %sBGBright = \"\\033[%sm\"\n", c.Name, c.BgBright)
+		sb.WriteString(fmt.Sprintf("const %sFG = \"\\033[%sm\"\n", c.Name, c.Fg))
+		sb.WriteString(fmt.Sprintf("const %sBG = \"\\033[%sm\"\n", c.Name, c.Bg))
+		sb.WriteString(fmt.Sprintf("const %sFGBright = \"\\033[%sm\"\n", c.Name, c.FgBright))
+		sb.WriteString(fmt.Sprintf("const %sBGBright = \"\\033[%sm\"\n", c.Name, c.BgBright))
 	}
 
-	fmt.Fprintf(f, "\n// Controls\n")
+	sb.WriteString("\n// Controls\n")
 	for _, c := range s.Controls {
 		if c.Seq != "" {
-			fmt.Fprintf(f, "const %s = \"%s\"\n", c.Name, c.Seq)
+			sb.WriteString(fmt.Sprintf("const %s = \"%s\"\n", c.Name, c.Seq))
 		} else {
+			// Only generate the _1 constant for controls with fmt (single parameter)
 			count := strings.Count(c.Fmt, "%d")
-
-			// Multi-unit (Function)
-			args, vars := getArgs(count)
-			argDef := strings.Join(args, ", ") + " int"
-			varList := strings.Join(vars, ", ")
-			fmt.Fprintf(f, "func %s(%s) string {\n\treturn fmt.Sprintf(\"%s\", %s)\n}\n", c.Name, argDef, c.Fmt, varList)
-
-			// Single-unit (Constant) if exactly one param
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
-				fmt.Fprintf(f, "const %s1 = \"%s\"\n", c.Name, singleFmt)
+				sb.WriteString(fmt.Sprintf("const %s1 = \"%s\"\n", c.Name, singleFmt))
 			}
 		}
 	}
-	return nil
+
+	sb.WriteString("\n")
+	return replaceGenSection(path, sb.String())
 }
 
 func generatePython(s *Source, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var sb strings.Builder
 
-	fmt.Fprintf(f, "\"\"\"Mansil ANSI Codes\"\"\"\n\n")
-
-	fmt.Fprintf(f, "# Styles\n")
+	sb.WriteString("\n# Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "%s = \"\\033[%sm\"\n", toUpperSnake(st.Name), st.Code)
+		sb.WriteString(fmt.Sprintf("%s = \"\\033[%sm\"\n", toUpperSnake(st.Name), st.Code))
 	}
 
-	fmt.Fprintf(f, "\n# Colors\n")
+	sb.WriteString("\n# Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "%s_FG = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.Fg)
-		fmt.Fprintf(f, "%s_BG = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.Bg)
-		fmt.Fprintf(f, "%s_FG_BRIGHT = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.FgBright)
-		fmt.Fprintf(f, "%s_BG_BRIGHT = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.BgBright)
+		sb.WriteString(fmt.Sprintf("%s_FG = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.Fg))
+		sb.WriteString(fmt.Sprintf("%s_BG = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.Bg))
+		sb.WriteString(fmt.Sprintf("%s_FG_BRIGHT = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.FgBright))
+		sb.WriteString(fmt.Sprintf("%s_BG_BRIGHT = \"\\033[%sm\"\n", toUpperSnake(c.Name), c.BgBright))
 	}
 
-	fmt.Fprintf(f, "\n# Controls\n")
+	sb.WriteString("\n# Controls\n")
 	for _, c := range s.Controls {
 		name := toUpperSnake(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "%s = \"%s\"\n", name, c.Seq)
+			sb.WriteString(fmt.Sprintf("%s = \"%s\"\n", name, c.Seq))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
-			args, _ := getArgs(count)
-			argDef := strings.Join(args, ": int, ") + ": int"
-
-			pyFmt := c.Fmt
-			for _, a := range args {
-				pyFmt = strings.Replace(pyFmt, "%d", "{"+a+"}", 1)
-			}
-
-			funcName := strings.ToLower(name)
-			fmt.Fprintf(f, "def %s(%s) -> str:\n    return f\"%s\"\n", funcName, argDef, pyFmt)
-
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
-				fmt.Fprintf(f, "%s_1 = \"%s\"\n", name, singleFmt)
+				sb.WriteString(fmt.Sprintf("%s_1 = \"%s\"\n", name, singleFmt))
 			}
 		}
 	}
 
-	return nil
+	sb.WriteString("\n")
+	return replaceGenSection(path, sb.String())
 }
 
 func generateRust(s *Source, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var sb strings.Builder
 
-	fmt.Fprintf(f, "//! Mansil ANSI Codes\n\n")
-
-	fmt.Fprintf(f, "// Styles\n")
+	sb.WriteString("\n// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "pub const %s: &str = \"\\x1b[%sm\";\n", toUpperSnake(st.Name), st.Code)
+		sb.WriteString(fmt.Sprintf("pub const %s: &str = \"\\x1b[%sm\";\n", toUpperSnake(st.Name), st.Code))
 	}
 
-	fmt.Fprintf(f, "\n// Colors\n")
+	sb.WriteString("\n// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "pub const %s_FG: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.Fg)
-		fmt.Fprintf(f, "pub const %s_BG: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.Bg)
-		fmt.Fprintf(f, "pub const %s_FG_BRIGHT: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.FgBright)
-		fmt.Fprintf(f, "pub const %s_BG_BRIGHT: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.BgBright)
+		sb.WriteString(fmt.Sprintf("pub const %s_FG: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.Fg))
+		sb.WriteString(fmt.Sprintf("pub const %s_BG: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.Bg))
+		sb.WriteString(fmt.Sprintf("pub const %s_FG_BRIGHT: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.FgBright))
+		sb.WriteString(fmt.Sprintf("pub const %s_BG_BRIGHT: &str = \"\\x1b[%sm\";\n", toUpperSnake(c.Name), c.BgBright))
 	}
 
-	fmt.Fprintf(f, "\n// Controls\n")
+	sb.WriteString("\n// Controls\n")
 	for _, c := range s.Controls {
 		name := toUpperSnake(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "pub const %s: &str = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\x1b"))
+			seq := strings.ReplaceAll(c.Seq, "\\033", "\\x1b")
+			sb.WriteString(fmt.Sprintf("pub const %s: &str = \"%s\";\n", name, seq))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
-			args, vars := getArgs(count)
-
-			rustArgs := ""
-			for _, a := range args {
-				rustArgs += fmt.Sprintf("%s: u32, ", a)
-			}
-			rustArgs = strings.TrimSuffix(rustArgs, ", ")
-
-			rustFmt := strings.Replace(c.Fmt, "%d", "{}", -1)
-			rustFmt = strings.ReplaceAll(rustFmt, "\\033", "\\x1b")
-			funcName := strings.ToLower(name)
-			fmt.Fprintf(f, "pub fn %s(%s) -> String {\n    format!(\"%s\", %s)\n}\n", funcName, rustArgs, rustFmt, strings.Join(vars, ", "))
-
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
 				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\x1b")
-				fmt.Fprintf(f, "pub const %s_1: &str = \"%s\";\n", name, singleFmt)
+				sb.WriteString(fmt.Sprintf("pub const %s_1: &str = \"%s\";\n", name, singleFmt))
 			}
 		}
 	}
-	return nil
+
+	sb.WriteString("\n")
+	return replaceGenSection(path, sb.String())
 }
 
 func generateNPM(s *Source, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var sb strings.Builder
+	indent := "    " // 4 spaces
 
-	fmt.Fprintf(f, "export default class Mansil {\n")
-
-	fmt.Fprintf(f, "// Styles\n")
+	sb.WriteString("\n" + indent + "// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "    static readonly %s = \"\\u001b[%sm\";\n", st.Name, st.Code)
+		sb.WriteString(fmt.Sprintf("%sstatic readonly %s = \"\\u001b[%sm\";\n", indent, st.Name, st.Code))
 	}
 
-	fmt.Fprintf(f, "\n// Colors\n")
+	sb.WriteString("\n" + indent + "// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "    static readonly %sFg = \"\\u001b[%sm\";\n", c.Name, c.Fg)
-		fmt.Fprintf(f, "    static readonly %sBg = \"\\u001b[%sm\";\n", c.Name, c.Bg)
-		fmt.Fprintf(f, "    static readonly %sFgBright = \"\\u001b[%sm\";\n", c.Name, c.FgBright)
-		fmt.Fprintf(f, "    static readonly %sBgBright = \"\\u001b[%sm\";\n", c.Name, c.BgBright)
+		sb.WriteString(fmt.Sprintf("%sstatic readonly %sFg = \"\\u001b[%sm\";\n", indent, c.Name, c.Fg))
+		sb.WriteString(fmt.Sprintf("%sstatic readonly %sBg = \"\\u001b[%sm\";\n", indent, c.Name, c.Bg))
+		sb.WriteString(fmt.Sprintf("%sstatic readonly %sFgBright = \"\\u001b[%sm\";\n", indent, c.Name, c.FgBright))
+		sb.WriteString(fmt.Sprintf("%sstatic readonly %sBgBright = \"\\u001b[%sm\";\n", indent, c.Name, c.BgBright))
 	}
 
-	fmt.Fprintf(f, "\n// Controls\n")
+	sb.WriteString("\n" + indent + "// Controls\n")
 	for _, c := range s.Controls {
 		name := toLowerCamel(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "    static readonly %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
+			seq := strings.ReplaceAll(c.Seq, "\\033", "\\u001b")
+			sb.WriteString(fmt.Sprintf("%sstatic readonly %s = \"%s\";\n", indent, name, seq))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
-			args, _ := getArgs(count)
-			argDef := strings.Join(args, ": number, ") + ": number"
-
-			jsFmt := strings.ReplaceAll(c.Fmt, "\\033", "\\u001b")
-			for _, a := range args {
-				jsFmt = strings.Replace(jsFmt, "%d", "${"+a+"}", 1)
-			}
-
-			fmt.Fprintf(f, "    static %s(%s): string {\n        return `%s`;\n    }\n", name, argDef, jsFmt)
-
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
 				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\u001b")
-				fmt.Fprintf(f, "    static readonly %s1 = \"%s\";\n", name, singleFmt)
+				sb.WriteString(fmt.Sprintf("%sstatic readonly %s1 = \"%s\";\n", indent, name, singleFmt))
 			}
 		}
 	}
-	fmt.Fprintf(f, "}\n") // Close class
-	return nil
+
+	sb.WriteString("\n")
+	return replaceGenSection(path, sb.String())
 }
 
 func generateDart(s *Source, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var sb strings.Builder
+	indent := "  " // 2 spaces
 
-	fmt.Fprintf(f, "class Mansil {\n")
-
-	fmt.Fprintf(f, "// Styles\n")
+	sb.WriteString("\n" + indent + "// Styles\n")
 	for _, st := range s.Styles {
-		fmt.Fprintf(f, "static const String %s = \"\\u001b[%sm\";\n", toLowerCamel(st.Name), st.Code)
+		sb.WriteString(fmt.Sprintf("%sstatic const String %s = \"\\u001b[%sm\";\n", indent, toLowerCamel(st.Name), st.Code))
 	}
 
-	fmt.Fprintf(f, "\n// Colors\n")
+	sb.WriteString("\n" + indent + "// Colors\n")
 	for _, c := range s.Colors {
-		fmt.Fprintf(f, "static const String %sFg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Fg)
-		fmt.Fprintf(f, "static const String %sBg = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.Bg)
-		fmt.Fprintf(f, "static const String %sFgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.FgBright)
-		fmt.Fprintf(f, "static const String %sBgBright = \"\\u001b[%sm\";\n", toLowerCamel(c.Name), c.BgBright)
+		sb.WriteString(fmt.Sprintf("%sstatic const String %sFg = \"\\u001b[%sm\";\n", indent, toLowerCamel(c.Name), c.Fg))
+		sb.WriteString(fmt.Sprintf("%sstatic const String %sBg = \"\\u001b[%sm\";\n", indent, toLowerCamel(c.Name), c.Bg))
+		sb.WriteString(fmt.Sprintf("%sstatic const String %sFgBright = \"\\u001b[%sm\";\n", indent, toLowerCamel(c.Name), c.FgBright))
+		sb.WriteString(fmt.Sprintf("%sstatic const String %sBgBright = \"\\u001b[%sm\";\n", indent, toLowerCamel(c.Name), c.BgBright))
 	}
 
-	fmt.Fprintf(f, "\n// Controls\n")
+	sb.WriteString("\n" + indent + "// Controls\n")
 	for _, c := range s.Controls {
 		name := toLowerCamel(c.Name)
 		if c.Seq != "" {
-			fmt.Fprintf(f, "static const String %s = \"%s\";\n", name, strings.ReplaceAll(c.Seq, "\\033", "\\u001b"))
+			seq := strings.ReplaceAll(c.Seq, "\\033", "\\u001b")
+			sb.WriteString(fmt.Sprintf("%sstatic const String %s = \"%s\";\n", indent, name, seq))
 		} else {
 			count := strings.Count(c.Fmt, "%d")
-			args, _ := getArgs(count)
-			argDef := strings.Join(args, ", int ")
-			argDef = "int " + argDef
-
-			dartStr := strings.ReplaceAll(c.Fmt, "\\033", "\\u001b")
-			for _, a := range args {
-				dartStr = strings.Replace(dartStr, "%d", "${"+a+"}", 1)
-			}
-			fmt.Fprintf(f, "static String %s(%s) => \"%s\";\n", name, argDef, dartStr)
-
 			if count == 1 {
 				singleFmt := strings.Replace(c.Fmt, "%d", "1", 1)
 				singleFmt = strings.ReplaceAll(singleFmt, "\\033", "\\u001b")
-				fmt.Fprintf(f, "static const String %s1 = \"%s\";\n", name, singleFmt)
+				sb.WriteString(fmt.Sprintf("%sstatic const String %s1 = \"%s\";\n", indent, name, singleFmt))
 			}
 		}
 	}
-	fmt.Fprintf(f, "}\n") // Close class
-	return nil
+
+	sb.WriteString("\n")
+	return replaceGenSection(path, sb.String())
 }
