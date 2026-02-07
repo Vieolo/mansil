@@ -1,0 +1,6 @@
+name: mansil
+description: Multi-language ANSI escape code library
+version: 0.1.2
+# commands:
+#   build: go build main.go
+#   test: go test

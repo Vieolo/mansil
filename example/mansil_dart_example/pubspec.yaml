@@ -1,0 +1,16 @@
+name: mansil_dart_example
+description: Mansil Dart example implementation
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.8
+
+# Add regular dependencies here.
+dependencies:
+  mansil:
+    path: "../.."
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
