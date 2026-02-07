@@ -1,3 +1,6 @@
+library;
+
+
 class Mansil {
 // Styles
 static const String reset = "\u001b[0m";
