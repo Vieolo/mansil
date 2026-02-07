@@ -1,6 +1,7 @@
 name: mansil_dart_example
 description: Mansil Dart example implementation
 version: 0.0.1
+publish_to: 'none'
 
 environment:
   sdk: ^3.10.8
