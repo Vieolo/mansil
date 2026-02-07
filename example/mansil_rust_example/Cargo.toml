@@ -1,0 +1,8 @@
+[package]
+name = "mansil_rust_example"
+version = "0.0.1"
+edition = "2021"
+description = "Mansil Rust example implementation"
+
+[dependencies]
+mansil = { path = "../.." }

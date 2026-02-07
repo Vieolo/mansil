@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "mansil"
+version = "0.1.1"
+source = { directory = "../../" }
+
+[[package]]
+name = "mansil-python-example"
+version = "0.0.1"
+source = { virtual = "." }
+dependencies = [
+    { name = "mansil" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "mansil", directory = "../../" }]

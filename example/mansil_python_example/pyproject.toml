@@ -1,0 +1,14 @@
+[project]
+name = "mansil-python-example"
+version = "0.0.1"
+description = "Mansil Python example implementation"
+requires-python = ">=3.11"
+dependencies = [
+    "mansil",
+]
+
+[tool.uv.sources]
+mansil = { path = "../.." }
+
+[project.scripts]
+start = "mansil_python_example:main"
