@@ -14,7 +14,7 @@ echo "~~~~~~~~~~~"
 
 echo "-=-=-=-= TS"
 cd mansil_ts_example
-bun start
+bun run src/index.ts
 cd ..
 echo "~~~~~~~~~~~"
 
