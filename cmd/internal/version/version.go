@@ -132,6 +132,7 @@ func Bump(bumpType BumpType) error {
 		{"pubspec.yaml", updateYamlVersion},
 		{"pyproject.toml", updateTomlVersion},
 		{"Cargo.toml", updateTomlVersion},
+		{"Cargo.lock", updateCargoLockVersion},
 	}
 
 	for _, f := range files {
@@ -183,6 +184,24 @@ func updateTomlVersion(path string, newVersion string) error {
 	// Use regex to replace version in TOML
 	re := regexp.MustCompile(`version\s*=\s*"[\d.]+"`)
 	updated := re.ReplaceAllString(string(data), `version = "`+newVersion+`"`)
+
+	return os.WriteFile(path, []byte(updated), 0644)
+}
+
+// updateCargoLockVersion updates the version of the mansil package in Cargo.lock.
+// Cargo would otherwise leave it at the old version until the next build
+func updateCargoLockVersion(path string, newVersion string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	// Match only the mansil package, so that the versions of any dependencies stay as they are
+	re := regexp.MustCompile(`(?m)^(name = "mansil"\r?\nversion = )"[\d.]+"`)
+	if !re.Match(data) {
+		return fmt.Errorf("no mansil package found")
+	}
+	updated := re.ReplaceAllString(string(data), `${1}"`+newVersion+`"`)
 
 	return os.WriteFile(path, []byte(updated), 0644)
 }

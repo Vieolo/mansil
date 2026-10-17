@@ -34,6 +34,7 @@ The source version is read from go.yaml and updated in:
   - pubspec.yaml
   - pyproject.toml
   - Cargo.toml
+  - Cargo.lock
 
 Arguments:
   build  - Increment the build/patch version (0.1.1 -> 0.1.2)

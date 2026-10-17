@@ -1,10 +1,12 @@
 package generator
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -44,7 +46,28 @@ func ReadSource(path string) (Source, error) {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return Source{}, err
 	}
+	if err := validateWidths(s.Widths); err != nil {
+		return Source{}, err
+	}
 	return s, nil
+}
+
+// Makes sure that every width range is valid, and that no code point is in more than one range.
+// A code point in two ranges would get the width of whichever range the helpers check first
+func validateWidths(w Widths) error {
+	all := slices.Concat(w.Zero, w.Wide)
+	for _, r := range all {
+		if r.To < r.From {
+			return fmt.Errorf("width range %q ends before it starts", r.Name)
+		}
+	}
+	slices.SortFunc(all, func(a, b CharRange) int { return cmp.Compare(a.From, b.From) })
+	for i := 1; i < len(all); i++ {
+		if all[i].From <= all[i-1].To {
+			return fmt.Errorf("width ranges %q and %q overlap", all[i-1].Name, all[i].Name)
+		}
+	}
+	return nil
 }
 
 // Helpers
@@ -71,6 +94,24 @@ func toLowerCamel(s string) string {
 
 func toUpperSnake(s string) string {
 	return strings.ToUpper(toSnake(s))
+}
+
+// Writes one line per range: its bounds formatted with `boundsFmt`, then its name as a comment.
+// With `align`, the comments line up in one column, the way gofmt and rustfmt format them
+func writeRanges(sb *strings.Builder, ranges []CharRange, indent, boundsFmt, comment string, align bool) {
+	bounds := make([]string, len(ranges))
+	longest := 0
+	for i, r := range ranges {
+		bounds[i] = fmt.Sprintf(boundsFmt, r.From, r.To)
+		longest = max(longest, len(bounds[i]))
+	}
+	for i, r := range ranges {
+		pad := ""
+		if align {
+			pad = strings.Repeat(" ", longest-len(bounds[i]))
+		}
+		sb.WriteString(indent + bounds[i] + pad + comment + r.Name + "\n")
+	}
 }
 
 // All constants, in all languages, will be placed in between the "GEN START" and "GEN END" comments
@@ -155,6 +196,14 @@ func generateGo(s Source, path string) error {
 		}
 	}
 
+	sb.WriteString("\n// Character widths, used by VisibleWidth and Truncate\n")
+	sb.WriteString("var zeroWidthRanges = [][2]rune{\n")
+	writeRanges(&sb, s.Widths.Zero, "\t", "{0x%04X, 0x%04X},", " // ", true)
+	sb.WriteString("}\n")
+	sb.WriteString("var wideRanges = [][2]rune{\n")
+	writeRanges(&sb, s.Widths.Wide, "\t", "{0x%04X, 0x%04X},", " // ", true)
+	sb.WriteString("}\n")
+
 	sb.WriteString("\n")
 	return replaceGenSection(path, sb.String())
 }
@@ -190,6 +239,14 @@ func generatePython(s Source, path string) error {
 			}
 		}
 	}
+
+	sb.WriteString("\n# Character widths, used by visible_width and truncate\n")
+	sb.WriteString("_ZERO_WIDTH_RANGES = (\n")
+	writeRanges(&sb, s.Widths.Zero, "    ", "(0x%04X, 0x%04X),", "  # ", false)
+	sb.WriteString(")\n")
+	sb.WriteString("_WIDE_RANGES = (\n")
+	writeRanges(&sb, s.Widths.Wide, "    ", "(0x%04X, 0x%04X),", "  # ", false)
+	sb.WriteString(")\n")
 
 	sb.WriteString("\n")
 	return replaceGenSection(path, sb.String())
@@ -228,6 +285,14 @@ func generateRust(s Source, path string) error {
 			}
 		}
 	}
+
+	sb.WriteString("\n// Character widths, used by visible_width and truncate\n")
+	sb.WriteString("const ZERO_WIDTH_RANGES: &[(u32, u32)] = &[\n")
+	writeRanges(&sb, s.Widths.Zero, "    ", "(0x%04X, 0x%04X),", " // ", true)
+	sb.WriteString("];\n")
+	sb.WriteString("const WIDE_RANGES: &[(u32, u32)] = &[\n")
+	writeRanges(&sb, s.Widths.Wide, "    ", "(0x%04X, 0x%04X),", " // ", true)
+	sb.WriteString("];\n")
 
 	sb.WriteString("\n")
 	return replaceGenSection(path, sb.String())
@@ -268,6 +333,14 @@ func generateTS(s Source, path string) error {
 		}
 	}
 
+	sb.WriteString("\n" + indent + "// Character widths, used by visibleWidth and truncate\n")
+	sb.WriteString(indent + "private static readonly zeroWidthRanges: [number, number][] = [\n")
+	writeRanges(&sb, s.Widths.Zero, indent+indent, "[0x%04X, 0x%04X],", " // ", false)
+	sb.WriteString(indent + "];\n")
+	sb.WriteString(indent + "private static readonly wideRanges: [number, number][] = [\n")
+	writeRanges(&sb, s.Widths.Wide, indent+indent, "[0x%04X, 0x%04X],", " // ", false)
+	sb.WriteString(indent + "];\n")
+
 	sb.WriteString("\n")
 	return replaceGenSection(path, sb.String())
 }
@@ -306,6 +379,14 @@ func generateDart(s Source, path string) error {
 			}
 		}
 	}
+
+	sb.WriteString("\n" + indent + "// Character widths, used by visibleWidth and truncate\n")
+	sb.WriteString(indent + "static const List<(int, int)> _zeroWidthRanges = [\n")
+	writeRanges(&sb, s.Widths.Zero, indent+indent, "(0x%04X, 0x%04X),", " // ", false)
+	sb.WriteString(indent + "];\n")
+	sb.WriteString(indent + "static const List<(int, int)> _wideRanges = [\n")
+	writeRanges(&sb, s.Widths.Wide, indent+indent, "(0x%04X, 0x%04X),", " // ", false)
+	sb.WriteString(indent + "];\n")
 
 	sb.WriteString("\n")
 	return replaceGenSection(path, sb.String())
