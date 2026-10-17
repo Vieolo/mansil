@@ -1,6 +1,25 @@
 name: mansil
 description: Multi-language ANSI escape code library
-version: 0.1.2
+version: 0.2.0
+
 # commands:
+#   something-else: echo "something else"
 #   build: go build main.go
 #   test: go test
+
+external:
+  contour:
+    # the central store profiles whose rules load eagerly here.
+    # List more than one to combine entry points — [python, cli] for a Python
+    # project that also ships a CLI. They compose in order, and an item both
+    # profiles select is loaded once. A bare name works too: bootstrap: python
+    # The --bootstrap flag to `contour mcp` overrides this.
+    bootstrap: [go]
+    # files loaded eagerly as project rules, paths relative to the project
+    # root. Keep a CLAUDE.md or AGENTS.md without moving it into rules/.
+    eager_files: []
+  gomore:
+    commands:
+      generate: go run ./cmd/main.go generate
+      test: uv run --no-project agent.py
+      examples: sh run_all_examples.sh

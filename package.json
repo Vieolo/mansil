@@ -1,6 +1,6 @@
 {
   "name": "@vieolo/mansil",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Multi-language library of ANSI escape codes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/mansil.test.ts"
   },
   "repository": {
     "type": "git",

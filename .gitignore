@@ -6,3 +6,4 @@ node_modules
 /dist
 /example/mansil_rust_example/target
 /src/mansil.egg-info
+.mcp.json

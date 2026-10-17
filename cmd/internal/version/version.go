@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -130,8 +131,9 @@ func Bump(bumpType BumpType) error {
 		{"go.yaml", updateYamlVersion},
 		{"package.json", updateJsonVersion},
 		{"pubspec.yaml", updateYamlVersion},
-		{"pyproject.toml", updateTomlVersion},
-		{"Cargo.toml", updateTomlVersion},
+		{"pyproject.toml", updateTomlVersion("project")},
+		{"Cargo.toml", updateTomlVersion("package")},
+		{"Cargo.lock", updateCargoLockVersion},
 	}
 
 	for _, f := range files {
@@ -173,16 +175,50 @@ func updateJsonVersion(path string, newVersion string) error {
 	return os.WriteFile(path, []byte(updated), 0644)
 }
 
-// updateTomlVersion updates version in TOML files (pyproject.toml, Cargo.toml)
-func updateTomlVersion(path string, newVersion string) error {
+// updateTomlVersion returns an updater for TOML files (pyproject.toml, Cargo.toml) that sets the
+// version in the given table only, so that the versions of dependencies and tools stay as they are
+func updateTomlVersion(table string) func(string, string) error {
+	return func(path string, newVersion string) error {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		// The table runs from its header to the next header, or to the end of the file
+		header := regexp.MustCompile(`(?m)^\[` + regexp.QuoteMeta(table) + `\][ \t]*\r?$`)
+		loc := header.FindIndex(data)
+		if loc == nil {
+			return fmt.Errorf("no [%s] table found", table)
+		}
+		start, end := loc[1], len(data)
+		if next := regexp.MustCompile(`(?m)^\[`).FindIndex(data[start:]); next != nil {
+			end = start + next[0]
+		}
+
+		re := regexp.MustCompile(`(?m)^version\s*=\s*"[\d.]+"`)
+		if !re.Match(data[start:end]) {
+			return fmt.Errorf("no version found in the [%s] table", table)
+		}
+		body := re.ReplaceAllLiteral(data[start:end], []byte(`version = "`+newVersion+`"`))
+
+		return os.WriteFile(path, slices.Concat(data[:start], body, data[end:]), 0644)
+	}
+}
+
+// updateCargoLockVersion updates the version of the mansil package in Cargo.lock.
+// Cargo would otherwise leave it at the old version until the next build
+func updateCargoLockVersion(path string, newVersion string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	// Use regex to replace version in TOML
-	re := regexp.MustCompile(`version\s*=\s*"[\d.]+"`)
-	updated := re.ReplaceAllString(string(data), `version = "`+newVersion+`"`)
+	// Match only the mansil package, so that the versions of any dependencies stay as they are
+	re := regexp.MustCompile(`(?m)^(name = "mansil"\r?\nversion = )"[\d.]+"`)
+	if !re.Match(data) {
+		return fmt.Errorf("no mansil package found")
+	}
+	updated := re.ReplaceAllString(string(data), `${1}"`+newVersion+`"`)
 
 	return os.WriteFile(path, []byte(updated), 0644)
 }
