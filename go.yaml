@@ -1,6 +1,6 @@
 name: mansil
 description: Multi-language ANSI escape code library
-version: 0.1.2
+version: 0.2.0
 
 # commands:
 #   something-else: echo "something else"

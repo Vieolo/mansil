@@ -1,6 +1,6 @@
 name: mansil
 description: A multi-language ANSI codes library.
-version: 0.1.2
+version: 0.2.0
 repository: https://github.com/vieolo/mansil
 
 environment:
